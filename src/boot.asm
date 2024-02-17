@@ -9,8 +9,8 @@ boot:
     mov ah, 0x10    ; Read character extended (blocking operation)
     int 0x16        ; Keyboard services (resulting character is in AL)
     
-    ; === If the read character is q exit ===
-    cmp al, 0x71    ; Do the comparison
+    ; === If the read character is ESC exit ===
+    cmp al, 0x1b    ; Do the comparison
     je .done        ; Jump to done if equal
 
     ; === Output the character ===
@@ -19,6 +19,19 @@ boot:
     mov cx, 0x1     ; Times to write the character
                     ; The character is already in AL from the read before
     int 0x10        ; Video services
+
+    ; === Move the cursor ===
+    mov ah, 0x3      ; Read cursor position
+    xor bh, bh      ; Display page number
+    int 0x10        ; Video Services, screen line & column will be in bx (high & low)
+
+    inc dl         ; Increase the column by one (will do deletion and new lines when im not a dipshit)
+
+    mov ah, 0x2     ; Write cursor position
+    xor bh, bh      ; Display page num
+    int 0x10        ; bx register set from the previous read
+
+    
 
     ; === Repeat ===
     jmp .loop
@@ -31,7 +44,7 @@ boot:
 
 cls:
     pusha           ; Not quite necessary, but might as well
-    mov ah, 0x0     ; Set video mode
+    xor ah, ah      ; Set video mode
     mov al, 0x03    ; Video mode 80x25 text mode, color
     int 0x10        ; Video services
     popa
