@@ -4,7 +4,7 @@ org 0x7c00  ; Output to 0x7c00, where the bios leaves off
 boot:
     call cls        ; clear the screen
     
-.loop:
+    .loop:
     ; === Read a character ===
     mov ah, 0x10    ; Read character extended (blocking operation)
     int 0x16        ; Keyboard services (resulting character is in AL)
@@ -13,19 +13,61 @@ boot:
     cmp al, 0x1b    ; Do the comparison
     je .done        ; Jump to done if equal
 
+    ; === Check for enter ===
+
+    cmp al, 0x0D
+    jne .nextcheck1
+    mov ah, 0x3
+    xor bh, bh
+    int 0x10
+
+    inc dh
+    xor dl, dl
+    mov ah, 0x2
+    xor bh, bh
+    int 0x10
+    jmp .loop
+
+    .nextcheck1:
+
+    ; === Check for backspace ===
+
+    cmp al, 0x08
+    jne .nextcheck2
+    
+    mov ah, 0x03
+    xor bh, bh
+    int 0x10
+    
+    dec dl
+    
+    mov ah, 0x2
+    xor bh, bh
+    int 0x10
+    
+    mov ah, 0x0A
+    mov al, 0x20
+    xor bh, bh
+    mov cx, 0x1
+    int 0x10
+    
+    jmp .loop
+
+
+    .nextcheck2:
     ; === Output the character ===
     mov ah, 0x0A    ; Write character
     mov bh, 0x0     ; Display page number
     mov cx, 0x1     ; Times to write the character
                     ; The character is already in AL from the read before
-    int 0x10        ; Video services
+    int 0x10        ; Video services 
 
     ; === Move the cursor ===
     mov ah, 0x3      ; Read cursor position
     xor bh, bh      ; Display page number
     int 0x10        ; Video Services, screen line & column will be in bx (high & low)
 
-    inc dl         ; Increase the column by one (will do deletion and new lines when im not a dipshit)
+    inc dl         ; Increase the column by one (nevermind)
 
     mov ah, 0x2     ; Write cursor position
     xor bh, bh      ; Display page num
@@ -35,7 +77,7 @@ boot:
 
     ; === Repeat ===
     jmp .loop
-.done:
+    .done:
     
     mov si, str_exit  ; Put the exit message in si
     call print        ; Call the print routine
