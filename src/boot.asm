@@ -15,37 +15,37 @@ boot:
 
     ; === Check for enter ===
 
-    cmp al, 0x0D
-    jne .nextcheck1
-    mov ah, 0x3
-    xor bh, bh
-    int 0x10
+    cmp al, 0x0D    ; Compare with keycode for carriage return
+    jne .nextcheck1 ; If not, go to the next check
+    mov ah, 0x3     ; Read the cursor position
+    xor bh, bh      ; On page 0
+    int 0x10        ; execute
 
-    inc dh
-    xor dl, dl
-    mov ah, 0x2
-    xor bh, bh
+    inc dh          ; Increase dh, where the current cursor line is
+    xor dl, dl      ; Zero the column since we start from the start of the line
+    mov ah, 0x2     ; Need to write the cursor information back
+    xor bh, bh      ; Again page 0
     int 0x10
-    jmp .loop
+    jmp .loop       ; Loop, character output and other stuff is unnecessary
 
     .nextcheck1:
 
     ; === Check for backspace ===
 
-    cmp al, 0x08
-    jne .nextcheck2
+    cmp al, 0x08    ; Check for keycode of backspace
+    jne .nextcheck2 ; Same, as before, jump to the next check if not
     
-    mov ah, 0x03
+    mov ah, 0x03    ; Read the cursor position
     xor bh, bh
     int 0x10
     
-    dec dl
+    dec dl          ; Move the cursor back
     
-    mov ah, 0x2
+    mov ah, 0x2     ; Write the new cursor pos
     xor bh, bh
     int 0x10
     
-    mov ah, 0x0A
+    mov ah, 0x0A    ; Just output out a space to delete the previous character
     mov al, 0x20
     xor bh, bh
     mov cx, 0x1
@@ -53,8 +53,29 @@ boot:
     
     jmp .loop
 
-
     .nextcheck2:
+    
+    ; === Check for TAB ===
+    cmp al, 0x9     ; Check for tab character
+    jne .nextcheck3
+
+    mov ah, 0x0A    ; Output 4 spaces
+    mov al, 0x20
+    xor bh, bh
+    mov cx, 0x4     ; Specify 4 times
+    int 0x10
+
+    mov ah, 0x03    ; Read the cursor position
+    xor bh, bh
+    int 0x10
+
+    add dl, 4       ; And increment it by 4
+
+    mov ah, 0x2     ; Write the cursor back
+    xor bh, bh
+    int 0x10
+
+    .nextcheck3:
     ; === Output the character ===
     mov ah, 0x0A    ; Write character
     mov bh, 0x0     ; Display page number

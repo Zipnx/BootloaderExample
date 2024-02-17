@@ -3,7 +3,9 @@
 
 An example of a basic x86 bootloader program
 
-May add a moving cursor when i feel like it
+## To fix:
+- [ ] Some instructions are definetely not needed, gotta run with a debugger and clean those up
+- [ ] Issues with possible overflows
 
 ## Resources:
 - [BIOS Interrupts and Functions](https://jyywiki.cn/pages/OS/manuals/BIOS-interrupts.pdf)
